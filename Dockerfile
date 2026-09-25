@@ -1,28 +1,25 @@
 FROM php:8.2-cli
 
-# Install system dependencies and PHP extensions required by Laravel
 RUN apt-get update && apt-get install -y \
+    git \
     unzip \
-    libpq-dev \
-    libcurl4-openssl-dev \
-    && docker-php-ext-install pdo pdo_mysql
+    libzip-dev \
+    libpng-dev \
+    libonig-dev \
+    && rm -rf /var/lib/apt/lists/*
 
-# Install Composer globally
+RUN docker-php-ext-install pdo_mysql mbstring zip exif pcntl bcmath
+
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Set working directory inside container
 WORKDIR /var/www
 
-# Copy all project files into the container
 COPY . .
 
-# Install PHP dependencies
-RUN composer install --no-dev --optimize-autoloader
+RUN composer install --no-interaction --prefer-dist
 
-# Set permissions for storage & cache
-RUN chown -R www-data:www-data storage bootstrap/cache
+RUN chmod -R 777 storage bootstrap/cache
 
 EXPOSE 8000
 
-# Start Laravel built-in development server
 CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
